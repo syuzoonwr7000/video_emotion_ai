@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+ffmpeg-python
+jinja2
+librosa
+python-multipart
