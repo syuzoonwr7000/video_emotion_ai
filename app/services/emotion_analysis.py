@@ -1,14 +1,10 @@
 import librosa
 import numpy as np
+import random
 
-def analyze_audio_emotion(audio_path: str):
-    y, sr = librosa.load(audio_path)
+def analyze_emotions(audio_path: str) -> dict:
+    # 仮の感情スコアをランダムに生成
+    emotions = ["嬉しい", "楽しい", "怖い", "悲しい", "驚き"]
+    emotion_scores = {emotion: round(random.uniform(0, 1), 2) for emotion in emotions}
+    return emotion_scores
 
-    # 簡単な感情分析の例（実際にはMLモデルを使用）
-    energy = np.mean(librosa.feature.rms(y=y))
-    pitch = np.mean(librosa.feature.spectral_centroid(y=y, sr=sr))
-
-    return {
-        "energy": round(energy, 4),
-        "pitch": round(pitch, 4)
-    }

@@ -9,9 +9,16 @@ document.getElementById("uploadForm").addEventListener("submit", async function(
     });
 
     const data = await response.json();
+
+    let emotionHtml = "<h2>感情スコア</h2><ul>";
+    for (const [emotion, score] of Object.entries(data.emotion_scores)) {
+        emotionHtml += `<li>${emotion}: ${score}</li>`;
+    }
+    emotionHtml += "</ul>";
+
     document.getElementById("result").innerHTML = `
         <p>アップロードされたファイル: ${data.filename}</p>
         <p>音声ファイル: ${data.audio_filename}</p>
-        <p>感情スコア: ${JSON.stringify(data.emotion_scores)}</p>
+        ${emotionHtml}
     `;
 });
