@@ -85,3 +85,14 @@ input[type="file"] {
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
 }
+
+/* サムネイル表示エリア */
+#thumbnail-container {
+    margin-top: 10px;
+    text-align: center;
+}
+
+#thumbnail-container canvas {
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
