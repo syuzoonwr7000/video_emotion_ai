@@ -4,3 +4,7 @@ ffmpeg-python
 jinja2
 librosa
 python-multipart
+torchaudio
+huggingface_hub
+transformers
+torch

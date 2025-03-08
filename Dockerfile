@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y ffmpeg
 # 必要なファイルをコンテナにコピー
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade speechbrain
 
 # アプリのコードをコピー
 COPY app /app/app

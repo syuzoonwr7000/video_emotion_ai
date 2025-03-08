@@ -12,4 +12,8 @@ services:
       - ./uploads:/app/uploads
     environment:
       - TZ=Asia/Tokyo
+      - HUGGINGFACE_HUB_CACHE=/app/cache/huggingface
+      - HF_TOKEN=${HF_TOKEN}
+    env_file:
+      - .env
     restart: always
