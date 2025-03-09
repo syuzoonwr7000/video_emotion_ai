@@ -1,14 +1,12 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import HTMLResponse
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse  # HTMLResponseをインポート
 import shutil
 import os
-from app.services.audio_processing import extract_audio
-from app.services.emotion_analysis import analyze_emotions
+from app.services.audio_processing import extract_audio  # 音声抽出モジュール
+from app.services.emotion_analysis import analyze_audio_emotion  # 感情分析モジュール
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
@@ -21,27 +19,6 @@ templates = Jinja2Templates(directory="app/templates")
 # アップロードディレクトリ
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# アップロード機能
-@app.post("/upload/")
-async def upload_video(file: UploadFile):
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-    
-    # ファイルを保存
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # 音声抽出
-    audio_path = extract_audio(file_path)
-
-    # 感情分析
-    emotion_scores = analyze_emotions(audio_path)
-
-    return JSONResponse({
-        "filename": file.filename,
-        "audio_filename": os.path.basename(audio_path),
-        "emotion_scores": emotion_scores
-    })
 
 # トップページを表示するGETメソッド
 @app.get("/", response_class=HTMLResponse)
