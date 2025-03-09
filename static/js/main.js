@@ -1,27 +1,55 @@
-document.getElementById("uploadForm").addEventListener("submit", async function(event) {
+document.getElementById("uploadForm").addEventListener("submit", async function (event) {
     event.preventDefault();
-    const formData = new FormData();
-    formData.append("file", document.getElementById("file").files[0]);
 
-    const response = await fetch("/upload/", {
-        method: "POST",
-        body: formData
-    });
+    const uploadBtn = document.querySelector(".upload-btn");
+    uploadBtn.disabled = true; // 二重送信防止のためボタンを無効化
+    uploadBtn.textContent = "アップロード中...";
 
-    const data = await response.json();
-
-    let emotionHtml = "<h2>感情スコア</h2><ul>";
-    for (const [emotion, score] of Object.entries(data.emotion_scores)) {
-        emotionHtml += `<li>${emotion}: ${score}</li>`;
+    const fileInput = document.getElementById("file");
+    if (!fileInput.files.length) {
+        alert("ファイルを選択してください！");
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "アップロード";
+        return;
     }
-    emotionHtml += "</ul>";
 
-    document.getElementById("result").innerHTML = `
-        <p>アップロードされたファイル: ${data.filename}</p>
-        <p>音声ファイル: ${data.audio_filename}</p>
-        ${emotionHtml}
-    `;
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    try {
+        const response = await fetch("/upload/", {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`サーバーエラー: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("アップロード成功:", data);
+
+        let emotionHtml = "<h2>感情スコア</h2><ul>";
+        for (const [emotion, score] of Object.entries(data.emotion_scores)) {
+            emotionHtml += `<li>${emotion}: ${score}</li>`;
+        }
+        emotionHtml += "</ul>";
+
+        document.getElementById("result").innerHTML = `
+            <p>アップロードされたファイル: ${data.filename}</p>
+            <p>音声ファイル: ${data.audio_filename}</p>
+            ${emotionHtml}
+        `;
+
+    } catch (error) {
+        console.error("アップロード失敗:", error);
+        alert("アップロードに失敗しました。もう一度試してください。");
+    } finally {
+        uploadBtn.disabled = false; // ボタンを再度有効化
+        uploadBtn.textContent = "アップロード";
+    }
 });
+
 
 document.addEventListener("DOMContentLoaded", function () {
     const dropzone = document.getElementById("dropzone");
