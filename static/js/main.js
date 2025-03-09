@@ -1,49 +1,58 @@
 document.getElementById("uploadForm").addEventListener("submit", async function (event) {
     event.preventDefault();
 
-    const uploadBtn = document.querySelector(".upload-btn");
-    uploadBtn.disabled = true; // 二重送信防止のためボタンを無効化
-    uploadBtn.textContent = "アップロード中...";
-
     const fileInput = document.getElementById("file");
     if (!fileInput.files.length) {
         alert("ファイルを選択してください！");
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = "アップロード";
         return;
     }
 
     const formData = new FormData();
     formData.append("file", fileInput.files[0]);
 
-    try {
-        const response = await fetch("/upload/", {
-            method: "POST",
-            body: formData
-        });
+    const progressCircle = document.getElementById("progress-circle");
+    const progressText = document.getElementById("progress-text");
 
-        if (!response.ok) {
-            throw new Error(`サーバーエラー: ${response.status}`);
+    // **XMLHttpRequestでアップロード進捗を監視**
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/upload/", true);
+
+    xhr.upload.addEventListener("progress", function (event) {
+        if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            const offset = 251.2 - (251.2 * percent) / 100;
+            
+            const progressContainer = document.getElementById("progress-container");
+            progressCircle.style.strokeDashoffset = offset; // **円バーの進捗を更新**
+            progressText.textContent = `${percent}%`; // **数値を更新**
+
+            // **アップロード開始時に円形プログレスバーを表示**
+            progressContainer.style.display = "block";
         }
+    });
 
-        const data = await response.json();
-        console.log("アップロード成功:", data);
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            progressText.textContent = "完了！";
+            const response = JSON.parse(xhr.responseText);
+            
+            let emotionHtml = "<h2>感情スコア</h2><ul>";
+            for (const [emotion, score] of Object.entries(response.emotion_scores)) {
+                emotionHtml += `<li>${emotion}: ${score}</li>`;
+            }
+            emotionHtml += "</ul>";
 
-        let emotionHtml = "<h2>感情スコア</h2><ul>";
-        for (const [emotion, score] of Object.entries(data.emotion_scores)) {
-            emotionHtml += `<li>${emotion}: ${score}</li>`;
+            document.getElementById("result").innerHTML = emotionHtml;
+        } else {
+            alert("アップロードに失敗しました");
         }
-        emotionHtml += "</ul>";
+    };
 
-        document.getElementById("result").innerHTML = {emotionHtml};
+    xhr.onerror = function () {
+        alert("通信エラーが発生しました");
+    };
 
-    } catch (error) {
-        console.error("アップロード失敗:", error);
-        alert("アップロードに失敗しました。もう一度試してください。");
-    } finally {
-        uploadBtn.disabled = false; // ボタンを再度有効化
-        uploadBtn.textContent = "アップロード";
-    }
+    xhr.send(formData);
 });
 
 
