@@ -69,34 +69,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // **動画のメタデータを読み込んだら、1秒目にシーク**
         video.addEventListener("loadedmetadata", function () {
-            console.log("メタデータ読み込み完了");
             video.currentTime = Math.min(1, video.duration / 2); // 動画の1秒目 or 半分の位置
         });
 
         // **動画がシーク完了したらサムネイルを作成**
         video.addEventListener("seeked", function () {
-            console.log("seeked イベント発火");
             setTimeout(() => {
                 const canvas = document.createElement("canvas");
-                canvas.width = 200;
-                canvas.height = 120;
+                const aspectRatio = video.videoWidth / video.videoHeight;
+    
+                // **最大幅 200px に制限しつつ、アスペクト比を保持**
+                if (aspectRatio > 1) {
+                    canvas.width = 200;
+                    canvas.height = 200 / aspectRatio;
+                } else {
+                    canvas.width = 200 * aspectRatio;
+                    canvas.height = 200;
+                }
+    
                 const ctx = canvas.getContext("2d");
-
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                thumbnailContainer.innerHTML = ""; // 既存のサムネイルを削除
+    
+                // **既存のサムネイルを削除し、新しいサムネイルを追加**
+                const thumbnailContainer = document.getElementById("thumbnail-container");
+                thumbnailContainer.innerHTML = "";
                 thumbnailContainer.appendChild(canvas);
-
+    
+                // **ファイル名を表示**
+                document.getElementById("file-name").textContent = file.name;
+    
                 // **後始末**
                 URL.revokeObjectURL(video.src);
                 document.body.removeChild(video);
-            }, 300); // 300ms 待って確実に描画
-        });
-
-        // **エラーハンドリング**
-        video.addEventListener("error", function () {
-            alert("動画の読み込みに失敗しました");
-            URL.revokeObjectURL(video.src);
-            document.body.removeChild(video);
+            }, 300);
         });
 
         video.load(); // **明示的にロード**
@@ -126,10 +131,6 @@ document.addEventListener("DOMContentLoaded", function () {
     fileInput.addEventListener("change", function () {
         if (fileInput.files.length > 0) {
             generateThumbnail(fileInput.files[0]); // サムネイル生成
-
-            // **ファイル名を表示**
-            const fileNameDisplay = document.getElementById("file-name");
-            fileNameDisplay.textContent = fileInput.files[0].name;
         }
     });
     
