@@ -114,4 +114,6 @@ input[type="file"] {
     font-size: 18px;
     font-weight: bold;
     color: #007bff;
+    white-space: nowrap; /* 🚀 文字の折り返しを防ぐ */
+    text-align: center;
 }

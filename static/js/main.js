@@ -1,59 +1,114 @@
-document.getElementById("uploadForm").addEventListener("submit", async function (event) {
-    event.preventDefault();
+let currentProgress = 0; // **進捗を保持する変数**
 
-    const fileInput = document.getElementById("file");
-    if (!fileInput.files.length) {
+document.getElementById("uploadForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    
+    const file = document.getElementById("file").files[0];
+    if (!file) {
         alert("ファイルを選択してください！");
         return;
     }
 
     const formData = new FormData();
-    formData.append("file", fileInput.files[0]);
+    formData.append("file", file);
 
-    const progressCircle = document.getElementById("progress-circle");
+    // **プログレスバーを表示**
+    const progressContainer = document.getElementById("progress-container");
     const progressText = document.getElementById("progress-text");
+    progressContainer.style.display = "block"; 
 
-    // **XMLHttpRequestでアップロード進捗を監視**
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/upload/", true);
+    try {
+        // **アップロード処理開始**
+        const uploadPromise = fetch("/upload/", { method: "POST", body: formData });
 
-    xhr.upload.addEventListener("progress", function (event) {
-        if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            const offset = 251.2 - (251.2 * percent) / 100;
-            
-            const progressContainer = document.getElementById("progress-container");
-            progressCircle.style.strokeDashoffset = offset; // **円バーの進捗を更新**
-            progressText.textContent = `${percent}%`; // **数値を更新**
+        // **99% までを 2 秒で進める**
+        await animateProgress(99, 2000);
 
-            // **アップロード開始時に円形プログレスバーを表示**
-            progressContainer.style.display = "block";
+        // **fetch() の完了予測時間（例：3秒）を考慮して 99 → スコア表示**
+        const scoreFetchTime = 3000; // **スコア取得までの予想時間**
+        const scorePromise = uploadPromise.then(res => res.json());
+
+        // **99% から感情スコア取得処理を開始**
+        await Promise.all([
+            scorePromise,
+            animateProgress(99, scoreFetchTime) // 99% まで動かし、スコア取得中に停止
+        ]);
+
+        // **スコアデータを取得**
+        const data = await scorePromise;
+
+        // **「完了！」を固定表示**
+        progressText.textContent = "完了！";
+
+        // **スコアの表示（進捗バーが99%になった時点で即座に表示）**
+        let emotionHtml = "<h2>感情スコア</h2><ul>";
+        for (const [emotion, score] of Object.entries(data.emotion_scores)) {
+            emotionHtml += `<li>${emotion}: ${score}</li>`;
         }
-    });
+        emotionHtml += "</ul>";
 
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            progressText.textContent = "完了！";
-            const response = JSON.parse(xhr.responseText);
-            
-            let emotionHtml = "<h2>感情スコア</h2><ul>";
-            for (const [emotion, score] of Object.entries(response.emotion_scores)) {
-                emotionHtml += `<li>${emotion}: ${score}</li>`;
-            }
-            emotionHtml += "</ul>";
-
-            document.getElementById("result").innerHTML = emotionHtml;
-        } else {
-            alert("アップロードに失敗しました");
-        }
-    };
-
-    xhr.onerror = function () {
-        alert("通信エラーが発生しました");
-    };
-
-    xhr.send(formData);
+        // **結果を表示**
+        document.getElementById("result").innerHTML = `
+            <p>アップロードされたファイル: ${data.filename}</p>
+            <p>音声ファイル: ${data.audio_filename}</p>
+            ${emotionHtml}
+        `;
+    } catch (error) {
+        alert("アップロードに失敗しました");
+        progressContainer.style.display = "none"; 
+    }
 });
+
+// **進捗アニメーション**
+function animateProgress(target, duration) {
+    return new Promise(resolve => {
+        let startTime = performance.now();
+        let initialProgress = currentProgress;
+        
+        function step(currentTime) {
+            let elapsedTime = currentTime - startTime;
+            let progress = Math.min(1, elapsedTime / duration);
+            
+            // **スムーズな進行**
+            let easedProgress = easeOutQuad(progress);
+            let newValue = Math.floor(initialProgress + (target - initialProgress) * easedProgress);
+
+            // **99% で停止する**
+            if (newValue >= 99) {
+                newValue = 99;
+            }
+
+            updateProgress(newValue);
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                currentProgress = target;
+                resolve();
+            }
+        }
+
+        requestAnimationFrame(step);
+    });
+}
+
+// **イージング関数（スムーズに99%へ移行）**
+function easeOutQuad(t) {
+    return t * (2 - t);
+}
+
+// **プログレスバーの更新**
+function updateProgress(value) {
+    const progressCircle = document.getElementById("progress-circle");
+    const radius = progressCircle.r.baseVal.value;
+    const circumference = 2 * Math.PI * radius;
+    
+    const offset = circumference * (1 - value / 100);
+    progressCircle.style.strokeDashoffset = offset;
+
+    document.getElementById("progress-text").textContent = `${value}%`;
+}
+
 
 
 document.addEventListener("DOMContentLoaded", function () {
