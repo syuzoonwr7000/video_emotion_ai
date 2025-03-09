@@ -35,11 +35,7 @@ document.getElementById("uploadForm").addEventListener("submit", async function 
         }
         emotionHtml += "</ul>";
 
-        document.getElementById("result").innerHTML = `
-            <p>アップロードされたファイル: ${data.filename}</p>
-            <p>音声ファイル: ${data.audio_filename}</p>
-            ${emotionHtml}
-        `;
+        document.getElementById("result").innerHTML = {emotionHtml};
 
     } catch (error) {
         console.error("アップロード失敗:", error);
@@ -130,6 +126,11 @@ document.addEventListener("DOMContentLoaded", function () {
     fileInput.addEventListener("change", function () {
         if (fileInput.files.length > 0) {
             generateThumbnail(fileInput.files[0]); // サムネイル生成
+
+            // **ファイル名を表示**
+            const fileNameDisplay = document.getElementById("file-name");
+            fileNameDisplay.textContent = fileInput.files[0].name;
         }
     });
+    
 });
