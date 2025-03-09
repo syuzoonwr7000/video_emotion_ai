@@ -47,19 +47,24 @@ document.addEventListener("DOMContentLoaded", function() {
             // **「完了！」を固定表示**
             progressText.textContent = "完了！";
 
-            // **スコアの表示（進捗バーが99%になった時点で即座に表示）**
-            let emotionHtml = "<h2>感情スコア</h2><ul>";
+            // **感情スコアを日本語で表示**
+            let emotionHtml = "<h2>感情スコア</h2><ul style='list-style-type:none; padding-left:0;'>";
+            const emotionMap = {
+                "joyful": "楽しい",
+                "happy": "嬉しい",
+                "fear": "怖い",
+                "sad": "悲しい",
+                "surprise": "驚き",
+            };
+
             for (const [emotion, score] of Object.entries(data.emotion_scores)) {
-                emotionHtml += `<li>${emotion}: ${score}</li>`;
+                const emotionLabel = emotionMap[emotion] || emotion; // 日本語化
+                emotionHtml += `<li>${emotionLabel}: ${score}</li>`;
             }
             emotionHtml += "</ul>";
 
-            // **結果を表示**
-            document.getElementById("result").innerHTML = `
-                <p>アップロードされたファイル: ${data.filename}</p>
-                <p>音声ファイル: ${data.audio_filename}</p>
-                ${emotionHtml}
-            `;
+            // **感情スコア結果のみ表示**
+            document.getElementById("result").innerHTML = emotionHtml;
         } catch (error) {
             alert("アップロードに失敗しました");
             progressContainer.style.display = "none"; 

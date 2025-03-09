@@ -18,7 +18,7 @@ def analyze_audio_emotion(text):
     classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
     # 感情カテゴリ
-    candidate_labels = ["happy", "sad", "angry", "neutral"]
+    candidate_labels = ["joyful", "happy", "fear", "sad", "surprise"]
 
     # 予測
     result = classifier(text, candidate_labels)
