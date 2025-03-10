@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>動画感情分析</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
     <div class="container">
@@ -34,11 +35,15 @@
                 <div id="progress-text">0%</div>
             </div>
 
+            <canvas id="emotionRadarChart"></canvas>
+
         </form>
 
         <div id="result"></div>
     </div>
 
     <script src="/static/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>

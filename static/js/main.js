@@ -27,28 +27,27 @@ document.addEventListener("DOMContentLoaded", function() {
         try {
             // **アップロード処理開始**
             const uploadPromise = fetch("/upload/", { method: "POST", body: formData });
-
+        
             // **99% までを 2 秒で進める**
             await animateProgress(99, 2000);
-
+        
             // **fetch() の完了予測時間（例：3秒）を考慮して 99 → スコア表示**
             const scoreFetchTime = 3000; // **スコア取得までの予想時間**
             const scorePromise = uploadPromise.then(res => res.json());
-
+        
             // **99% から感情スコア取得処理を開始**
             await Promise.all([
                 scorePromise,
                 animateProgress(99, scoreFetchTime) // 99% まで動かし、スコア取得中に停止
             ]);
-
+        
             // **スコアデータを取得**
             const data = await scorePromise;
-
+        
             // **「完了！」を固定表示**
             progressText.textContent = "完了！";
-
-            // **感情スコアを日本語で表示**
-            let emotionHtml = "<h2>感情スコア</h2><ul style='list-style-type:none; padding-left:0;'>";
+        
+            // **感情スコアを5段階評価で表示するレーダーチャートの準備**
             const emotionMap = {
                 "joyful": "楽しい",
                 "happy": "嬉しい",
@@ -56,15 +55,63 @@ document.addEventListener("DOMContentLoaded", function() {
                 "sad": "悲しい",
                 "surprise": "驚き",
             };
-
-            for (const [emotion, score] of Object.entries(data.emotion_scores)) {
-                const emotionLabel = emotionMap[emotion] || emotion; // 日本語化
-                emotionHtml += `<li>${emotionLabel}: ${score}</li>`;
-            }
-            emotionHtml += "</ul>";
-
-            // **感情スコア結果のみ表示**
-            document.getElementById("result").innerHTML = emotionHtml;
+        
+            // スコアを0~5に変換
+            const scores = Object.values(data.emotion_scores).map(score => score * 5);
+        
+            // ラベルを日本語に変換
+            const labels = Object.keys(data.emotion_scores).map(emotion => emotionMap[emotion]);
+        
+            // レーダーチャート用のデータ
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    label: "感情スコア",
+                    data: scores, // 変換後のスコア
+                    fill: true,
+                    backgroundColor: "rgba(0, 123, 255, 0.2)",
+                    borderColor: "rgba(0, 123, 255, 1)",
+                    borderWidth: 1
+                }]
+            };
+        
+            // レーダーチャートの設定
+            const config = {
+                type: 'radar',
+                data: chartData,
+                options: {
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 5, // 5段階評価なので最大5に設定
+                            ticks: {
+                                stepSize: 1
+                            },
+                        }
+                    },
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return tooltipItem.label + ": " + tooltipItem.raw.toFixed(2); // 2桁の小数点表示
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        
+            // 最初は非表示にしているキャンバスを表示
+            document.getElementById("emotionRadarChart").style.display = "block";
+        
+            // レーダーチャートの描画
+            const ctx = document.getElementById('emotionRadarChart').getContext('2d');
+            new Chart(ctx, config);
+        
         } catch (error) {
             alert("アップロードに失敗しました");
             progressContainer.style.display = "none"; 
@@ -73,6 +120,7 @@ document.addEventListener("DOMContentLoaded", function() {
             uploadButton.disabled = false;
             fileInput.disabled = false;
         }
+        
     });
 
     // **進捗アニメーション**

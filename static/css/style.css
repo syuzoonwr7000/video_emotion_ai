@@ -117,3 +117,9 @@ input[type="file"] {
     white-space: nowrap; /* 🚀 文字の折り返しを防ぐ */
     text-align: center;
 }
+
+#emotionRadarChart {
+    width: 400;
+    height: 400;
+    display: none; /* 最初は非表示にする */
+}
