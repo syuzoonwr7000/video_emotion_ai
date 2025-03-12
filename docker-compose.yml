@@ -1,15 +1,16 @@
-version: "3.8"
-
 services:
-  fastapi_app:
-    build: .
-    container_name: fastapi_app
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./app:/app/app
-      - ./static:/app/static
-      - ./uploads:/app/uploads
-    environment:
-      - TZ=Asia/Tokyo
-    restart: always
+    depends_on:
+      - frontend
