@@ -1,17 +1,12 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root():
-    return """
-    <html>
-        <head>
-            <title>FastAPI with Vue.js</title>
-        </head>
-        <body>
-            <h1>Hello from FastAPI!</h1>
-        </body>
-    </html>
-    """
+# 静的ファイルの提供
+app.mount("/static", StaticFiles(directory="/app/frontend/dist"), name="static")
+
+@app.get("/")
+def index():
+    return FileResponse("/app/frontend/dist/index.html")
