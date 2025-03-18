@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse  # HTMLResponseをインポート
 import shutil
 import os
@@ -47,3 +47,37 @@ async def upload_file(file: UploadFile = File(...)):
         "audio_filename": os.path.basename(audio_path),
         "emotion_scores": emotion_scores
     }
+
+UPLOADS_DIR = "uploads"
+EXPIRATION_TIME = 7 * 24 * 60 * 60  # 7日 (秒単位)
+MAX_STORAGE_USAGE = 80  # 80%を超えたら削除
+
+def cleanup_uploads():
+    """ 一定期間経過したファイルを削除 """
+    now = time.time()
+    for filename in os.listdir(UPLOADS_DIR):
+        file_path = os.path.join(UPLOADS_DIR, filename)
+        if os.path.isfile(file_path) and now - os.path.getmtime(file_path) > EXPIRATION_TIME:
+            os.remove(file_path)
+            print(f"Deleted: {file_path}")
+
+def check_and_cleanup():
+    """ ディスク使用率を監視し、必要に応じてファイル削除 """
+    total, used, free = shutil.disk_usage("/")
+    usage_percent = (used / total) * 100
+    if usage_percent > MAX_STORAGE_USAGE:
+        print(f"Storage usage {usage_percent:.2f}% exceeds limit. Cleaning up...")
+        cleanup_uploads()
+
+def scheduled_cleanup():
+    """ 定期的にストレージ監視を実行するループ """
+    while True:
+        check_and_cleanup()
+        time.sleep(3600)  # 1時間ごとに実行
+
+@app.on_event("startup")
+def startup_event():
+    """ FastAPI 起動時にバックグラウンドで実行 """
+    import threading
+    thread = threading.Thread(target=scheduled_cleanup, daemon=True)
+    thread.start()
