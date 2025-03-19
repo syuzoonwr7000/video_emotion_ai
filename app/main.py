@@ -1,12 +1,14 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse  # HTMLResponseをインポート
 import shutil
+import time
 import os
 from app.services.audio_processing import extract_audio  # 音声抽出モジュール
 from app.services.emotion_analysis import analyze_audio_emotion  # 感情分析モジュール
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI()
 
