@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
-from fastapi.responses import HTMLResponse  # HTMLResponseをインポート
+from fastapi.responses import HTMLResponse, JSONResponse
 import shutil
 import time
 import os
@@ -8,9 +8,20 @@ from app.services.emotion_analysis import analyze_audio_emotion  # 感情分析�
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
+load_dotenv()  # .env の読み込み
 
 app = FastAPI()
+
+# 環境変数を取得するエンドポイント
+@app.get("/adsense-config")
+async def get_adsense_config():
+    return JSONResponse({
+        "client_id": os.getenv("ADSENSE_CLIENT_ID"),
+        "slot_id": os.getenv("ADSENSE_SLOT_ID"),
+    })
 
 # 静的ファイルを提供
 app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -1,9 +1,33 @@
 document.addEventListener("DOMContentLoaded", function() {
     let currentProgress = 0; // **進捗を保持する変数**
 
+    const adVideo = document.getElementById('ad-video');
+    const uploadContainer = document.getElementById('upload-container');
+    const fileInput = document.getElementById('file');
+    const uploadBtn = document.getElementById('upload-btn');
+
+    // 動画終了後に操作可能な状態にする
+    adVideo.onended = function() {
+        // 動画が終了したらアップロードセクションを表示
+        uploadContainer.style.display = 'block';
+    };
+
+    // 動画が再生中は操作を無効にする
+    adVideo.onplay = function() {
+        fileInput.disabled = true;
+        uploadBtn.disabled = true;
+    };
+
+    // ファイル選択やアップロードボタンが押されたときの処理
+    uploadBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        alert('アップロードを開始します');
+        // ここでファイルアップロード処理を追加
+    });
+
     document.getElementById("uploadForm").addEventListener("submit", async function(event) {
         event.preventDefault();
-        
+
         const file = document.getElementById("file").files[0];
         if (!file) {
             alert("ファイルを選択してください！");
@@ -27,26 +51,26 @@ document.addEventListener("DOMContentLoaded", function() {
         try {
             // **アップロード処理開始**
             const uploadPromise = fetch("/upload/", { method: "POST", body: formData });
-        
+
             // **99% までを 2 秒で進める**
             await animateProgress(99, 2000);
-        
+
             // **fetch() の完了予測時間（例：3秒）を考慮して 99 → スコア表示**
             const scoreFetchTime = 3000; // **スコア取得までの予想時間**
             const scorePromise = uploadPromise.then(res => res.json());
-        
+
             // **99% から感情スコア取得処理を開始**
             await Promise.all([
                 scorePromise,
                 animateProgress(99, scoreFetchTime) // 99% まで動かし、スコア取得中に停止
             ]);
-        
+
             // **スコアデータを取得**
             const data = await scorePromise;
-        
+
             // **「完了！」を固定表示**
             progressText.textContent = "完了！";
-        
+
             // **感情スコアを5段階評価で表示するレーダーチャートの準備**
             const emotionMap = {
                 "joyful": "楽しい",
@@ -55,13 +79,13 @@ document.addEventListener("DOMContentLoaded", function() {
                 "sad": "悲しい",
                 "surprise": "驚き",
             };
-        
+
             // スコアを0~5に変換
             const scores = Object.values(data.emotion_scores).map(score => score * 5);
-        
+
             // ラベルを日本語に変換
             const labels = Object.keys(data.emotion_scores).map(emotion => emotionMap[emotion]);
-        
+
             // レーダーチャート用のデータ
             const chartData = {
                 labels: labels,
@@ -74,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     borderWidth: 1
                 }]
             };
-        
+
             // レーダーチャートの設定
             const config = {
                 type: 'radar',
@@ -104,14 +128,14 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 }
             };
-        
+
             // 最初は非表示にしているキャンバスを表示
             document.getElementById("emotionRadarChart").style.display = "block";
-        
+
             // レーダーチャートの描画
             const ctx = document.getElementById('emotionRadarChart').getContext('2d');
             new Chart(ctx, config);
-        
+
         } catch (error) {
             alert("アップロードに失敗しました");
             progressContainer.style.display = "none"; 
@@ -120,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function() {
             uploadButton.disabled = false;
             fileInput.disabled = false;
         }
-        
+
     });
 
     // **進捗アニメーション**
@@ -128,11 +152,11 @@ document.addEventListener("DOMContentLoaded", function() {
         return new Promise(resolve => {
             let startTime = performance.now();
             let initialProgress = currentProgress;
-            
+
             function step(currentTime) {
                 let elapsedTime = currentTime - startTime;
                 let progress = Math.min(1, elapsedTime / duration);
-                
+
                 // **スムーズな進行**
                 let easedProgress = easeOutQuad(progress);
                 let newValue = Math.floor(initialProgress + (target - initialProgress) * easedProgress);
@@ -166,7 +190,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const progressCircle = document.getElementById("progress-circle");
         const radius = progressCircle.r.baseVal.value;
         const circumference = 2 * Math.PI * radius;
-        
+
         const offset = circumference * (1 - value / 100);
         progressCircle.style.strokeDashoffset = offset;
 
@@ -204,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
             setTimeout(() => {
                 const canvas = document.createElement("canvas");
                 const aspectRatio = video.videoWidth / video.videoHeight;
-    
+
                 // **最大幅 200px に制限しつつ、アスペクト比を保持**
                 if (aspectRatio > 1) {
                     canvas.width = 200;
@@ -213,18 +237,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     canvas.width = 200 * aspectRatio;
                     canvas.height = 200;
                 }
-    
+
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
+
                 // **既存のサムネイルを削除し、新しいサムネイルを追加**
                 const thumbnailContainer = document.getElementById("thumbnail-container");
                 thumbnailContainer.innerHTML = "";
                 thumbnailContainer.appendChild(canvas);
-    
+
                 // **ファイル名を表示**
                 document.getElementById("file-name").textContent = file.name;
-    
+
                 // **後始末**
                 URL.revokeObjectURL(video.src);
                 document.body.removeChild(video);
@@ -260,5 +284,45 @@ document.addEventListener("DOMContentLoaded", function () {
             generateThumbnail(fileInput.files[0]); // サムネイル生成
         }
     });
-    
+
 });
+
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // FastAPI から環境変数を取得
+        const response = await fetch('/adsense-config');
+        const config = await response.json();
+        const adsenseClientId = config.client_id;
+        const adsenseSlotId = config.slot_id;
+
+        if (!adsenseClientId || !adsenseSlotId) {
+            console.error("AdSenseの環境変数が設定されていません");
+            return;
+        }
+
+        // AdSenseの広告を表示
+        const adContainer = document.getElementById('adsense-container');
+        adContainer.innerHTML = ''; // 既存の広告をクリア
+
+        const adScript = document.createElement('ins');
+        adScript.className = 'adsbygoogle';
+        adScript.style = 'display:block';
+        adScript.setAttribute('data-ad-client', adsenseClientId);
+        adScript.setAttribute('data-ad-slot', adsenseSlotId);
+        adScript.setAttribute('data-ad-format', 'auto'); // 追加（サイズ調整）
+        adScript.setAttribute('data-full-width-responsive', 'true'); // 追加（レスポンシブ対応）
+
+        adContainer.appendChild(adScript);
+
+        // AdSense スクリプトを読み込む
+        if (window.adsbygoogle) {
+            window.adsbygoogle.push({});
+        } else {
+            console.error("adsbygoogleが読み込まれていません");
+        }
+    } catch (error) {
+        console.error("AdSense設定の取得に失敗しました", error);
+    }
+});
+
+

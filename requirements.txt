@@ -8,3 +8,4 @@ torchaudio
 huggingface_hub
 transformers
 torch
+dotenv
